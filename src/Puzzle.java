@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.TreeMap;
@@ -27,7 +29,7 @@ public class Puzzle {
     private int[][] puzzle;
     private int posBrancoI;
     private int posBrancoJ;
-    
+    private Random r = new Random();
     public Puzzle(int tam){
         init(tam);
     }
@@ -39,23 +41,27 @@ public class Puzzle {
                 puzzle[i][j] = i*tam+j;
             }
         }
+       // puzzle = new int[][]{{1,5,4},{0,2,3},{8,7,6}};
         vazio = tam*tam - 1;
         posBrancoI = tam-1;
         posBrancoJ = posBrancoI;
+        //posBrancoI = 2;
+        //posBrancoJ = 0;
     }
     
-    public int rand(){
-        int i=0;
-        Random r = new Random();
+    public Queue<Integer> rand(){
+        Queue<Integer> sequenciaMovimentos = new LinkedList<>();
         while(!completo()){
-            rand(r);
-            i++;
+            sequenciaMovimentos.add(rand(r));
         }
-        return i;
+        return sequenciaMovimentos;
+    }
+    
+    public int[][] getPuzzle(){
+        return puzzle;
     }
     
     public void embaralhar(int numMov){
-        Random r = new Random();
         for(int i=0;i<numMov;i++){
             rand(r);
         }
@@ -66,6 +72,22 @@ public class Puzzle {
         if(j<0 || j>=puzzle.length)return false;
         return true;
     }
+
+    public int getPosBrancoI() {
+        return posBrancoI;
+    }
+
+    public void setPosBrancoI(int posBrancoI) {
+        this.posBrancoI = posBrancoI;
+    }
+
+    public int getPosBrancoJ() {
+        return posBrancoJ;
+    }
+
+    public void setPosBrancoJ(int posBrancoJ) {
+        this.posBrancoJ = posBrancoJ;
+    }
     
     public void swap(int i,int j){
         puzzle[posBrancoI][posBrancoJ] = puzzle[i][j];
@@ -74,63 +96,64 @@ public class Puzzle {
         posBrancoJ = j;
     }
     
-    public void rand(Random rand){
+    public int rand(Random rand){
         int movimento = rand.nextInt(4);
         int[] movimentosI = new int[]{-1,1,0,0};
         int[] movimentosJ = new int[]{0,0,-1,1};
         if(posValida(posBrancoI + movimentosI[movimento], posBrancoJ+movimentosJ[movimento])){
             swap(posBrancoI + movimentosI[movimento], posBrancoJ+movimentosJ[movimento]);
+            return movimento;
         }
-        else rand(rand);
+        else return rand(rand);
     }
     
-    public int heuristica1(){
-        HashNode estado = new HashNode(this.puzzle,dist1());
+    public HashNode heuristica1(){
+        HashNode estado = new HashNode(this.puzzle,dist1(),0,null);
         int[] movimentosI = new int[]{-1,1,0,0};
         int[] movimentosJ = new int[]{0,0,-1,1};
         int numMovimentos = -1;
         HashMap<HashNode,Integer> visitados = new HashMap<>();
-        TreeMap<HashNode,Integer> listaParaVisitar = new TreeMap<>();
-        listaParaVisitar.put(estado, 0);
+        PriorityQueue<HashNode> listaParaVisitar = new PriorityQueue<>(14*4);
+        listaParaVisitar.add(estado);
         while(!listaParaVisitar.isEmpty()){
-            estado = listaParaVisitar.firstKey();
-            numMovimentos = listaParaVisitar.remove(estado);
+            estado = listaParaVisitar.remove();
+            numMovimentos = estado.numMovimentos;
             if(visitados.containsKey(estado))continue;
-            if(completo())break;
             visitados.put(estado, numMovimentos);
             puzzle = estado.estado;
             atualizaPosBranco();
+            if(completo())break;
+            //Testa os 4 movimentos
             for(int i=0;i<4;i++){
+                //Se o movimento for valido, insere na lista para visitar
                 if(posValida(posBrancoI + movimentosI[i],posBrancoJ + movimentosJ[i])){
                     swap(posBrancoI+movimentosI[i],posBrancoJ+movimentosJ[i]);
                     int distancia = dist1();
-                    listaParaVisitar.put(new HashNode(this.puzzle,dist1()+numMovimentos+1),numMovimentos+1);
+                    listaParaVisitar.add(new HashNode(clonePuzzle(),dist1()+numMovimentos+1,numMovimentos+1,estado));
                     swap(posBrancoI-movimentosI[i],posBrancoJ-movimentosJ[i]);
                 }
             }
         }
-        if(completo())return numMovimentos;
-        else return -1;
+        if(completo())return estado;
+        else return null;
     }
     
-    public int heuristica2(){
-        HashNode estado = new HashNode(this.puzzle,dist1());
+    public HashNode heuristica2(){
+        HashNode estado = new HashNode(this.puzzle,dist1(),0,null);
         int[] movimentosI = new int[]{-1,1,0,0};
         int[] movimentosJ = new int[]{0,0,-1,1};
         int numMovimentos = -1,menorDistancia;
         HashMap<HashNode,Integer> visitados = new HashMap<>();
-        TreeMap<HashNode,Integer> listaParaVisitar = new TreeMap<>();
-        
-        listaParaVisitar.put(estado, 0);
+        PriorityQueue<HashNode> listaParaVisitar = new PriorityQueue<>(14*4);
+        listaParaVisitar.add(estado);
         while(!listaParaVisitar.isEmpty()){
-            estado = listaParaVisitar.firstKey();
-            numMovimentos = listaParaVisitar.remove(estado);
+            estado = listaParaVisitar.remove();
+            numMovimentos = estado.numMovimentos;
             if(visitados.containsKey(estado))continue;
-            if(completo())break;
             visitados.put(estado, numMovimentos);
             puzzle = estado.estado;
             atualizaPosBranco();
-            
+            if(completo())break;
             for(int i=0;i<4;i++){
                 if(posValida(posBrancoI + movimentosI[i],posBrancoJ + movimentosJ[i])){
                     swap(posBrancoI + movimentosI[i],posBrancoJ + movimentosJ[i]);
@@ -144,13 +167,13 @@ public class Puzzle {
                         }
                     }
                     if(completo())menorDistancia = 0;
-                    listaParaVisitar.put(new HashNode(puzzle,menorDistancia+numMovimentos+1), numMovimentos+1);
+                    listaParaVisitar.add(new HashNode(clonePuzzle(),dist1()+numMovimentos+1,numMovimentos+1,estado));
                     swap(posBrancoI - movimentosI[i],posBrancoJ - movimentosJ[i]);
                 }
             }
         }
-        if(completo())return numMovimentos;
-        else return -1;
+        if(completo())return estado;
+        else return null;
     }
     
     //Distancia de Manhathan
@@ -177,7 +200,7 @@ public class Puzzle {
         return true;
     }
     
-    public int[][] getPuzzle(){
+    public int[][] clonePuzzle(){
         int[][] ret = new int[puzzle.length][puzzle.length];
         for(int i=0;i<puzzle.length;i++){
             for(int j=0;j<puzzle.length;j++){
@@ -200,18 +223,14 @@ public class Puzzle {
         return s;
     }
     
-    public static void main(String[] args) {
-        Puzzle p = new Puzzle(3);
-        int it = 10000;
-        int resultado = 0;
-        for(int i=0;i<it;i++){
-            p.embaralhar(50);
-            resultado+=(p.heuristica2());
-        }
-        System.out.println(resultado/(float)it);
-    }
+    
 
-    private void atualizaPosBranco() {
+    
+    public void setPuzzle(int[][] puzzle){
+        this.puzzle = puzzle;
+    }
+    
+    public void atualizaPosBranco() {
         for(int i=0;i<puzzle.length;i++){
             for(int j=0;j<puzzle.length;j++){
                 if(puzzle[i][j] == vazio){
@@ -222,12 +241,26 @@ public class Puzzle {
             }
         }
     }
+
+    public static void main(String[] args){
+        Puzzle p = new Puzzle(3);
+        long cont = 0;
+        System.out.println(p.toString());
+        System.out.println(p.puzzle[p.posBrancoI][p.posBrancoJ]);
+        System.out.println(p.heuristica1().getDistancia());
+    }
     
-    private class HashNode implements Comparable<HashNode>{
+    public HashNode heuristica3() {
+        return null;
+    }
+    
+    public class HashNode implements Comparable<HashNode>{
         private int[][] estado;
         private int distancia;
+        private int numMovimentos;
+        private HashNode pai;
         
-        public HashNode(int[][] estado, int distancia){
+        public HashNode(int[][] estado, int distancia,int numMovimentos,HashNode pai){
             this.estado = new int[estado.length][estado.length];
             for(int i=0;i<estado.length;i++){
                 for(int j=0;j<estado.length;j++){
@@ -235,13 +268,16 @@ public class Puzzle {
                 }
             }
             this.distancia = distancia;
+            this.numMovimentos = numMovimentos;
+            this.pai = pai;
         }
 
         @Override
         public int compareTo(HashNode o) {
-            if(distancia<o.distancia)return -1;
-            else if(distancia>o.distancia)return 1;
-            else if(equals(o))return 0;
+            int diferença = Integer.compare(distancia, o.distancia);
+            if(diferença==0)diferença = Integer.compare(numMovimentos, numMovimentos);
+            if(diferença!=0)return diferença;
+            if(equals(o))return 0;
             return -1;
         }   
 
@@ -262,6 +298,38 @@ public class Puzzle {
         @Override
         public int hashCode() {
             return Arrays.deepHashCode(estado);
+        }
+
+        public int[][] getEstado() {
+            return estado;
+        }
+
+        public void setEstado(int[][] estado) {
+            this.estado = estado;
+        }
+
+        public int getDistancia() {
+            return distancia;
+        }
+
+        public void setDistancia(int distancia) {
+            this.distancia = distancia;
+        }
+
+        public int getNumMovimentos() {
+            return numMovimentos;
+        }
+
+        public void setNumMovimentos(int numMovimentos) {
+            this.numMovimentos = numMovimentos;
+        }
+
+        public HashNode getPai() {
+            return pai;
+        }
+
+        public void setPai(HashNode pai) {
+            this.pai = pai;
         }
         
     }
