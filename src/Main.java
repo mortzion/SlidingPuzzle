@@ -216,6 +216,11 @@ public class Main extends javax.swing.JFrame{
         jRadioButton3.setText("Heuristica 2");
 
         jRadioButton4.setText("Heuristica pessoal");
+        jRadioButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRadioButton4ActionPerformed(evt);
+            }
+        });
 
         jButton11.setText("Resolver");
         jButton11.addActionListener(new java.awt.event.ActionListener() {
@@ -392,6 +397,10 @@ public class Main extends javax.swing.JFrame{
     private void button(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button
         // TODO add your handling code here:
     }//GEN-LAST:event_button
+
+    private void jRadioButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButton4ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jRadioButton4ActionPerformed
 
     /**
      * @param args the command line arguments
