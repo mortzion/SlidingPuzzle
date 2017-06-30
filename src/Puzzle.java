@@ -114,7 +114,8 @@ public class Puzzle {
     }
 
     public HashNode heuristica1() {
-        HashNode estado = new HashNode(this.puzzle, dist1(), 0, null);
+        int numIterações = 0;
+        HashNode estado = new HashNode(this.puzzle, dist1(), 0, null,numIterações);
         int[] movimentosI = new int[]{-1, 1, 0, 0};
         int[] movimentosJ = new int[]{0, 0, -1, 1};
         int numMovimentos = -1;
@@ -122,6 +123,7 @@ public class Puzzle {
         PriorityQueue<HashNode> listaParaVisitar = new PriorityQueue<>(14 * 4);
         listaParaVisitar.add(estado);
         while (!listaParaVisitar.isEmpty()) {
+            numIterações++;
             estado = listaParaVisitar.remove();
             numMovimentos = estado.numMovimentos;
             if (visitados.containsKey(estado)) {
@@ -139,7 +141,7 @@ public class Puzzle {
                 if (posValida(posBrancoI + movimentosI[i], posBrancoJ + movimentosJ[i])) {
                     swap(posBrancoI + movimentosI[i], posBrancoJ + movimentosJ[i]);
                     int distancia = dist1();
-                    listaParaVisitar.add(new HashNode(clonePuzzle(), dist1() + numMovimentos + 1, numMovimentos + 1, estado));
+                    listaParaVisitar.add(new HashNode(clonePuzzle(), dist1() + numMovimentos + 1, numMovimentos + 1, estado,numIterações));
                     swap(posBrancoI - movimentosI[i], posBrancoJ - movimentosJ[i]);
                 }
             }
@@ -152,7 +154,8 @@ public class Puzzle {
     }
 
     public HashNode heuristica2() {
-        HashNode estado = new HashNode(this.puzzle, dist1(), 0, null);
+        int numIteraçoes =0;
+        HashNode estado = new HashNode(this.puzzle, dist1(), 0, null,numIteraçoes);
         int[] movimentosI = new int[]{-1, 1, 0, 0};
         int[] movimentosJ = new int[]{0, 0, -1, 1};
         int numMovimentos = -1, menorDistancia;
@@ -160,6 +163,7 @@ public class Puzzle {
         PriorityQueue<HashNode> listaParaVisitar = new PriorityQueue<>(14 * 4);
         listaParaVisitar.add(estado);
         while (!listaParaVisitar.isEmpty()) {
+            numIteraçoes++;
             estado = listaParaVisitar.remove();
             numMovimentos = estado.numMovimentos;
             if (visitados.containsKey(estado)) {
@@ -178,7 +182,7 @@ public class Puzzle {
                     if (completo()) {
                         menorDistancia = 0;
                     }
-                    listaParaVisitar.add(new HashNode(clonePuzzle(), dist1() + numMovimentos + 1, numMovimentos + 1, estado));
+                    listaParaVisitar.add(new HashNode(clonePuzzle(), dist1() + numMovimentos + 1, numMovimentos + 1, estado,numIteraçoes));
                     swap(posBrancoI - movimentosI[i], posBrancoJ - movimentosJ[i]);
                 }
             }
@@ -191,7 +195,9 @@ public class Puzzle {
     }
 
     public int nivelHeuristica(int altura) {
-        if(altura == 0)return dist1();
+        if (altura == 0) {
+            return dist1();
+        }
         int[] movimentosI = new int[]{-1, 1, 0, 0};
         int[] movimentosJ = new int[]{0, 0, -1, 1};
         int menorDistancia = Integer.MAX_VALUE;
@@ -199,13 +205,18 @@ public class Puzzle {
         for (int j = 0; j < 4; j++) {
             if (posValida(posBrancoI + movimentosI[j], posBrancoJ + movimentosJ[j])) {
                 swap(posBrancoI + movimentosI[j], posBrancoJ + movimentosJ[j]);
-                if(altura==1)distanciaAtual = dist1();
-                else distanciaAtual = nivelHeuristica(altura-1);
+                if (altura == 1) {
+                    distanciaAtual = dist1();
+                } else {
+                    distanciaAtual = nivelHeuristica(altura - 1);
+                }
                 if (distanciaAtual < menorDistancia) {
                     menorDistancia = distanciaAtual;
                 }
                 swap(posBrancoI - movimentosI[j], posBrancoJ - movimentosJ[j]);
-                if(completo())return 0;
+                if (completo()) {
+                    return 0;
+                }
             }
         }
         return menorDistancia;
@@ -290,7 +301,8 @@ public class Puzzle {
     }
 
     public HashNode heuristica3() {
-        HashNode estado = new HashNode(this.puzzle, dist1(), 0, null);
+        int numIterações = 0;
+        HashNode estado = new HashNode(this.puzzle, dist1(), 0, null,numIterações);
         int[] movimentosI = new int[]{-1, 1, 0, 0};
         int[] movimentosJ = new int[]{0, 0, -1, 1};
         int numMovimentos = -1, menorDistancia;
@@ -298,6 +310,7 @@ public class Puzzle {
         PriorityQueue<HashNode> listaParaVisitar = new PriorityQueue<>(14 * 4);
         listaParaVisitar.add(estado);
         while (!listaParaVisitar.isEmpty()) {
+            numIterações++;
             estado = listaParaVisitar.remove();
             numMovimentos = estado.numMovimentos;
             if (visitados.containsKey(estado)) {
@@ -316,7 +329,7 @@ public class Puzzle {
                     if (completo()) {
                         menorDistancia = 0;
                     }
-                    listaParaVisitar.add(new HashNode(clonePuzzle(), dist1() + numMovimentos + 1, numMovimentos + 1, estado));
+                    listaParaVisitar.add(new HashNode(clonePuzzle(), dist1() + numMovimentos + 1, numMovimentos + 1, estado,numIterações));
                     swap(posBrancoI - movimentosI[i], posBrancoJ - movimentosJ[i]);
                 }
             }
@@ -327,15 +340,16 @@ public class Puzzle {
             return null;
         }
     }
-
+    
     public class HashNode implements Comparable<HashNode> {
 
         private int[][] estado;
         private int distancia;
         private int numMovimentos;
+        private int numIterações;
         private HashNode pai;
 
-        public HashNode(int[][] estado, int distancia, int numMovimentos, HashNode pai) {
+        public HashNode(int[][] estado, int distancia, int numMovimentos, HashNode pai,int numIterações) {
             this.estado = new int[estado.length][estado.length];
             for (int i = 0; i < estado.length; i++) {
                 for (int j = 0; j < estado.length; j++) {
@@ -345,6 +359,7 @@ public class Puzzle {
             this.distancia = distancia;
             this.numMovimentos = numMovimentos;
             this.pai = pai;
+            this.numIterações = numIterações;
         }
 
         @Override
@@ -416,5 +431,9 @@ public class Puzzle {
             this.pai = pai;
         }
 
+        public int getIterações(){
+            return numIterações;
+        }
+        
     }
 }
