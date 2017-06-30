@@ -1,40 +1,53 @@
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Random;
-import java.util.Scanner;
-import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 /**
  *
  * @author Matheus Prachedes Batista
  */
 public class Puzzle {
-
+    /**
+     * Valor da peça no tabuleiro que representa o espaço vazio
+     * Em um tablueiro 3x3 o vazio é representado por 8 (3x3-1)
+    */
     public int vazio;
+    
+    /**
+     * Estado do tabuleiro.
+     * As peças começam pelo numero 0
+     */
     private int[][] puzzle;
+    
+    /**
+     * Posição no tabuleiro onde se encontra o espaço vazio
+     */
     private int posBrancoI;
     private int posBrancoJ;
+    
+    /**
+     * Usado para embaralhar o tabuleiro
+     */
     private Random r = new Random();
 
+    /**
+     * Constroi o tabuleiro com dimensão quadrada tamxtam
+     * @param tam Tamanho dos lados do tabuleiro
+     */
     public Puzzle(int tam) {
         init(tam);
     }
 
+    /**
+     * Inicializa o tabuleiro com as peças nos lugares correto e inicializa as 
+     * variaveis de posição do espaço vazio
+     * @param tam Tamanho dos lados do tabuleiro
+     */
     public void init(int tam) {
         puzzle = new int[tam][tam];
         for (int i = 0; i < tam; i++) {
@@ -42,14 +55,17 @@ public class Puzzle {
                 puzzle[i][j] = i * tam + j;
             }
         }
-        // puzzle = new int[][]{{1,5,4},{0,2,3},{8,7,6}};
         vazio = tam * tam - 1;
         posBrancoI = tam - 1;
         posBrancoJ = posBrancoI;
-        //posBrancoI = 2;
-        //posBrancoJ = 0;
     }
 
+    /**
+     * Ordena o tabuleiro de maneira aleatoria e retorna uma fila que contem os
+     * movimentos realizados. A fila é utilizada para fazer a animação na interface
+     * grafica
+     * @return Fila com os movimentos realizados 
+     */
     public Queue<Integer> rand() {
         Queue<Integer> sequenciaMovimentos = new LinkedList<>();
         while (!completo()) {
@@ -58,16 +74,22 @@ public class Puzzle {
         return sequenciaMovimentos;
     }
 
-    public int[][] getPuzzle() {
-        return puzzle;
-    }
-
+    /**
+     * Embaralha o tabuleiro realizando numMov movimentos
+     * @param numMov numero de movimentos utilizados para embaralhar
+     */
     public void embaralhar(int numMov) {
         for (int i = 0; i < numMov; i++) {
             rand(r);
         }
     }
 
+    /**
+     * Verifica se a posição (i,j) é valida no tabuleiro
+     * @param i linha
+     * @param j coluna
+     * @return 
+     */
     public boolean posValida(int i, int j) {
         if (i < 0 || i >= puzzle.length) {
             return false;
@@ -94,6 +116,11 @@ public class Puzzle {
         this.posBrancoJ = posBrancoJ;
     }
 
+    /**
+     * Altera a posição da peça vazia com a peça na posição (i,j)
+     * @param i 
+     * @param j 
+     */
     public void swap(int i, int j) {
         puzzle[posBrancoI][posBrancoJ] = puzzle[i][j];
         puzzle[i][j] = vazio;
@@ -101,6 +128,11 @@ public class Puzzle {
         posBrancoJ = j;
     }
 
+    /**
+     * Realiza um movimento aleatorio valido e retorna o movimento realizado  
+     * @param rand Objeto usado para calcular o numero aletorio
+     * @return 
+     */
     public int rand(Random rand) {
         int movimento = rand.nextInt(4);
         int[] movimentosI = new int[]{-1, 1, 0, 0};
@@ -112,37 +144,46 @@ public class Puzzle {
             return rand(rand);
         }
     }
-
-    public HashNode heuristica1() {
+    
+    /**
+     * Resolve o quebra-cabeça utilizando o algoritmo A* adaptado para trabalhar
+     * em niveis
+     * @param nivel nivel de busca
+     * @return Retona o HashNode que contem o estado resolvido, é possivel recuperar
+     * o caminho percorrido deste esado usando o atributo pai
+     */
+    public HashNode heuristicaEmNiveis(int nivel){
         int numIterações = 0;
         HashNode estado = new HashNode(this.puzzle, dist1(), 0, null,numIterações);
         int[] movimentosI = new int[]{-1, 1, 0, 0};
         int[] movimentosJ = new int[]{0, 0, -1, 1};
         int numMovimentos = -1;
+        //Lista de nos já visitados
         HashMap<HashNode, Integer> visitados = new HashMap<>();
+        //Lista de nos para visitar
         PriorityQueue<HashNode> listaParaVisitar = new PriorityQueue<>(14 * 4);
         listaParaVisitar.add(estado);
         while (!listaParaVisitar.isEmpty()) {
             numIterações++;
             estado = listaParaVisitar.remove();
             numMovimentos = estado.numMovimentos;
-            if (visitados.containsKey(estado)) {
+            if (visitados.containsKey(estado)) {//Estado já visitado
                 continue;
             }
             visitados.put(estado, numMovimentos);
             puzzle = estado.estado;
             atualizaPosBranco();
             if (completo()) {
-                break;
+                break;//Estado final, termina o algoritmo
             }
             //Testa os 4 movimentos
             for (int i = 0; i < 4; i++) {
                 //Se o movimento for valido, insere na lista para visitar
-                if (posValida(posBrancoI + movimentosI[i], posBrancoJ + movimentosJ[i])) {
+                if (posValida(posBrancoI + movimentosI[i], posBrancoJ + movimentosJ[i])) {//Realiza o movimento
                     swap(posBrancoI + movimentosI[i], posBrancoJ + movimentosJ[i]);
-                    int distancia = dist1();
+                    int distancia = nivelHeuristica(nivel-1);
                     listaParaVisitar.add(new HashNode(clonePuzzle(), dist1() + numMovimentos + 1, numMovimentos + 1, estado,numIterações));
-                    swap(posBrancoI - movimentosI[i], posBrancoJ - movimentosJ[i]);
+                    swap(posBrancoI - movimentosI[i], posBrancoJ - movimentosJ[i]);//Volta o movimento
                 }
             }
         }
@@ -153,67 +194,33 @@ public class Puzzle {
         }
     }
 
-    public HashNode heuristica2() {
-        int numIteraçoes =0;
-        HashNode estado = new HashNode(this.puzzle, dist1(), 0, null,numIteraçoes);
-        int[] movimentosI = new int[]{-1, 1, 0, 0};
-        int[] movimentosJ = new int[]{0, 0, -1, 1};
-        int numMovimentos = -1, menorDistancia;
-        HashMap<HashNode, Integer> visitados = new HashMap<>();
-        PriorityQueue<HashNode> listaParaVisitar = new PriorityQueue<>(14 * 4);
-        listaParaVisitar.add(estado);
-        while (!listaParaVisitar.isEmpty()) {
-            numIteraçoes++;
-            estado = listaParaVisitar.remove();
-            numMovimentos = estado.numMovimentos;
-            if (visitados.containsKey(estado)) {
-                continue;
-            }
-            visitados.put(estado, numMovimentos);
-            puzzle = estado.estado;
-            atualizaPosBranco();
-            if (completo()) {
-                break;
-            }
-            for (int i = 0; i < 4; i++) {
-                if (posValida(posBrancoI + movimentosI[i], posBrancoJ + movimentosJ[i])) {
-                    swap(posBrancoI + movimentosI[i], posBrancoJ + movimentosJ[i]);
-                    menorDistancia = nivelHeuristica(1);
-                    if (completo()) {
-                        menorDistancia = 0;
-                    }
-                    listaParaVisitar.add(new HashNode(clonePuzzle(), dist1() + numMovimentos + 1, numMovimentos + 1, estado,numIteraçoes));
-                    swap(posBrancoI - movimentosI[i], posBrancoJ - movimentosJ[i]);
-                }
-            }
-        }
-        if (completo()) {
-            return estado;
-        } else {
-            return null;
-        }
-    }
-
+    /**
+     * Realiza uma busca em nivel
+     * @param altura nivel para realizar a busca
+     * @return retona a menor heuristica encontrada no nivel buscado
+     */
     public int nivelHeuristica(int altura) {
-        if (altura == 0) {
+        if (altura == 0) {//Caso a altura seja 0 retorna a heuristica no estado atual
             return dist1();
         }
+        //Altura diferente de 0, realiza os 4 movimentos possiveis e busca a menor
+        //heurisica dos estados adjacentes
         int[] movimentosI = new int[]{-1, 1, 0, 0};
         int[] movimentosJ = new int[]{0, 0, -1, 1};
         int menorDistancia = Integer.MAX_VALUE;
         int distanciaAtual;
         for (int j = 0; j < 4; j++) {
             if (posValida(posBrancoI + movimentosI[j], posBrancoJ + movimentosJ[j])) {
-                swap(posBrancoI + movimentosI[j], posBrancoJ + movimentosJ[j]);
-                if (altura == 1) {
+                swap(posBrancoI + movimentosI[j], posBrancoJ + movimentosJ[j]);//Realiza o movimento
+                if (altura == 1) {//Caso a altura seja 1, calcula a heuristica desse estado
                     distanciaAtual = dist1();
-                } else {
+                } else {//Caso contrario a heuristica desse estado é a heuristica do nivel abaixo
                     distanciaAtual = nivelHeuristica(altura - 1);
                 }
                 if (distanciaAtual < menorDistancia) {
                     menorDistancia = distanciaAtual;
                 }
-                swap(posBrancoI - movimentosI[j], posBrancoJ - movimentosJ[j]);
+                swap(posBrancoI - movimentosI[j], posBrancoJ - movimentosJ[j]);//Volta o movimento
                 if (completo()) {
                     return 0;
                 }
@@ -222,7 +229,10 @@ public class Puzzle {
         return menorDistancia;
     }
 
-    //Distancia de Manhathan
+    /**
+     * Calcula a distancia de Manhathan do estado atual
+     * @return 
+     */
     public int dist1() {
         int soma = 0;
         int peça;
@@ -237,6 +247,10 @@ public class Puzzle {
         return soma;
     }
 
+    /**
+     * Verifica se o estado atual está resolvido
+     * @return 
+     */
     public boolean completo() {
         for (int i = 0; i < puzzle.length; i++) {
             for (int j = 0; j < puzzle.length; j++) {
@@ -248,6 +262,10 @@ public class Puzzle {
         return true;
     }
 
+    /**
+     * Clona o estado do tabuleiro
+     * @return 
+     */
     public int[][] clonePuzzle() {
         int[][] ret = new int[puzzle.length][puzzle.length];
         for (int i = 0; i < puzzle.length; i++) {
@@ -259,6 +277,10 @@ public class Puzzle {
         return ret;
     }
 
+    /**
+     * Retorna a representação do tabuleiro em String
+     * @return 
+     */
     public String toString() {
         String s = "";
         for (int i = 0; i < puzzle.length; i++) {
@@ -278,6 +300,13 @@ public class Puzzle {
         this.puzzle = puzzle;
     }
 
+    public int[][] getPuzzle() {
+        return puzzle;
+    }
+
+    /**
+     * Procura a peça vazia e atualiza as variaveis de posição
+     */
     public void atualizaPosBranco() {
         for (int i = 0; i < puzzle.length; i++) {
             for (int j = 0; j < puzzle.length; j++) {
@@ -295,58 +324,38 @@ public class Puzzle {
         long cont = 0;
         for (int i = 0; i < 1000; i++) {
             p.embaralhar(100);
-            cont += p.heuristica3().numMovimentos;
+            cont += p.heuristicaEmNiveis(1).numMovimentos;
         }
         System.out.println(cont / 1000f);
     }
 
-    public HashNode heuristica3() {
-        int numIterações = 0;
-        HashNode estado = new HashNode(this.puzzle, dist1(), 0, null,numIterações);
-        int[] movimentosI = new int[]{-1, 1, 0, 0};
-        int[] movimentosJ = new int[]{0, 0, -1, 1};
-        int numMovimentos = -1, menorDistancia;
-        HashMap<HashNode, Integer> visitados = new HashMap<>();
-        PriorityQueue<HashNode> listaParaVisitar = new PriorityQueue<>(14 * 4);
-        listaParaVisitar.add(estado);
-        while (!listaParaVisitar.isEmpty()) {
-            numIterações++;
-            estado = listaParaVisitar.remove();
-            numMovimentos = estado.numMovimentos;
-            if (visitados.containsKey(estado)) {
-                continue;
-            }
-            visitados.put(estado, numMovimentos);
-            puzzle = estado.estado;
-            atualizaPosBranco();
-            if (completo()) {
-                break;
-            }
-            for (int i = 0; i < 4; i++) {
-                if (posValida(posBrancoI + movimentosI[i], posBrancoJ + movimentosJ[i])) {
-                    swap(posBrancoI + movimentosI[i], posBrancoJ + movimentosJ[i]);
-                    menorDistancia = nivelHeuristica(2);
-                    if (completo()) {
-                        menorDistancia = 0;
-                    }
-                    listaParaVisitar.add(new HashNode(clonePuzzle(), dist1() + numMovimentos + 1, numMovimentos + 1, estado,numIterações));
-                    swap(posBrancoI - movimentosI[i], posBrancoJ - movimentosJ[i]);
-                }
-            }
-        }
-        if (completo()) {
-            return estado;
-        } else {
-            return null;
-        }
-    }
-    
+    /**
+     * Classe usada para armazenar os estados do tabuleiro, assim como informações
+     * auxiliares (numero de movimentos até chegar no estado atual, numero de 
+     * iterações no algoritmo até chegar no estado atual, etc..)
+     */
     public class HashNode implements Comparable<HashNode> {
-
+        /**
+         * Estado do tabuleiro
+         */
         private int[][] estado;
+        /**
+         * Usado para ordenar a fila de prioridade, representa a soma da distancia
+         * percorrida até chegar neste estado com a heuristica deste estado
+         */
         private int distancia;
+        /**
+         * Numero de movimentos utilizados para chegar neste estado
+         */
         private int numMovimentos;
+        /**
+         * Numero de iterações utilizados para chegar neste estado
+         */
         private int numIterações;
+        /**
+         * Estado anterior a este estado. Utilizado para recuperar o caminho 
+         * percorrido para chegar neste estado.
+         */
         private HashNode pai;
 
         public HashNode(int[][] estado, int distancia, int numMovimentos, HashNode pai,int numIterações) {

@@ -366,15 +366,15 @@ public class Main extends javax.swing.JFrame{
             sequenciaMovimentos = p.rand();
             numIt = numMov = sequenciaMovimentos.size();
         }else if(jRadioButton2.isSelected()){
-            node = p.heuristica1();
+            node = p.heuristicaEmNiveis(1);
             numMov = node.getNumMovimentos();
             numIt = node.getIterações();
         }else if(jRadioButton3.isSelected()){
-            node = p.heuristica2();
+            node = p.heuristicaEmNiveis(2);
             numMov = node.getNumMovimentos();
             numIt = node.getIterações();
         }else if(jRadioButton4.isSelected()){
-            node = p.heuristica3();
+            node = p.heuristicaEmNiveis(3);
             numMov = node.getNumMovimentos();
             numIt = node.getIterações();
         }
