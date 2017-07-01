@@ -324,7 +324,7 @@ public class Puzzle {
         long cont = 0;
         for (int i = 0; i < 1000; i++) {
             p.embaralhar(100);
-            cont += p.heuristicaEmNiveis(1).numMovimentos;
+            cont += p.rand().size();
         }
         System.out.println(cont / 1000f);
     }
